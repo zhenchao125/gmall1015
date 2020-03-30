@@ -45,7 +45,7 @@ object JsonMock {
         ("360", 20), ("tencent", 20), ("baidu", 10), ("website", 10))
     
     // 生成模拟数据的时候是否结束退出
-    val quitOpts = RandomOptions((true, 5), (false, 95))
+    val quitOpts = RandomOptions((true, 50), (false, 95))
     
     // 模拟出来一条启动日志
     def initOneStartupLog(): String = {
@@ -60,7 +60,7 @@ object JsonMock {
         `area` string COMMENT '城市'
         `channel` string COMMENT '渠道'
          */
-        val mid: String = "mid_" + RandomNumUtil.randomInt(1, 5)
+        val mid: String = "mid_" + RandomNumUtil.randomInt(1, 200)
         val uid: String = "uid_" + RandomNumUtil.randomInt(1, 10000)
         val os: String = osOpts.getRandomOption()
         val appId: String = this.appId

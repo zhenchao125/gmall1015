@@ -10,6 +10,7 @@ import com.atguigu.gmall.realtime.bean.StartupLog
 import com.atguigu.gmall.realtime.util.{MykafkaUtil, RedisUtil}
 import org.apache.spark.SparkConf
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import redis.clients.jedis.Jedis
 
@@ -28,7 +29,8 @@ object DauApp {
         
         // 2. 过滤去重得到日活明细
         // 2.1 需要借助第三方的工具进行去重: redis
-        val firstStartupLogStream = startupLogStream.transform(rdd => {
+        val firstStartupLogStream: DStream[StartupLog] = startupLogStream.transform(rdd => {
+            // 这些是在driver中
             // 2.2 从redis中读取已经启动的设备
             val client: Jedis = RedisUtil.getClient
             val key: String = Constant.TOPIC_STARTUP + ":" + new SimpleDateFormat("yyyy-MM-dd").format(new Date())
@@ -36,8 +38,18 @@ object DauApp {
             client.close()
             // 2.3 把已经启动的设备过滤掉.  rdd中只留下那些在redis中不存在的那些记录
             val midsBD: Broadcast[util.Set[String]] = ssc.sparkContext.broadcast(mids)
-            rdd.filter(log => !midsBD.value.contains(log.mid))
+            // 2.4 考虑到某个mid在一个批次内启动了多次(而且是这个mid第一次启动), 会出现重复情况
+            rdd
+                .filter(log => !midsBD.value.contains(log.mid))
+                .map(log => (log.mid, log))
+                .groupByKey()
+                .map {
+                    //                    case (_, it) => it.toList.sortBy(_.ts).head
+                    case (_, it) => it.toList.minBy(_.ts)
+                }
+            
         })
+        import org.apache.phoenix.spark._
         // 2.4 把第一次启动的设备保存到 redis 中
         firstStartupLogStream.foreachRDD(rdd => {
             rdd.foreachPartition(logIt => {
@@ -49,13 +61,16 @@ object DauApp {
                 })
                 client.close()
             })
+            
+            // 3. 写到 hbase. 每个mid的每天的启动记录只有一条
+            rdd.saveToPhoenix(Constant.DAU_TABLE,
+                Seq("MID", "UID", "APPID", "AREA", "OS", "CHANNEL", "LOGTYPE", "VERSION", "TS", "LOGDATE", "LOGHOUR"),
+                zkUrl = Some("hadoop102,hadoop103,hadoop104:2181")
+            )
         })
+        
+        
         firstStartupLogStream.print(1000)
-        // 3. 写到 hbase. 每个mid的每天的启动记录只有一条
-        firstStartupLogStream.foreachRDD(rdd => {
-        
-        })
-        
         ssc.start()
         ssc.awaitTermination()
     }
