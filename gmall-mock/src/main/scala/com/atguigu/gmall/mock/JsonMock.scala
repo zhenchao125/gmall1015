@@ -127,6 +127,7 @@ object JsonMock {
                 println(oneEventLog)
                 Thread.sleep(100)
             }
+            
             Thread.sleep(1000)
         })
     }
