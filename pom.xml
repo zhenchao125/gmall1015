@@ -18,6 +18,7 @@
         <module>gmall-mock</module>
         <module>gmall-logger</module>
         <module>gmall-realtime</module>
+        <module>gmall-pubisher</module>
     </modules>
 
     <properties>
