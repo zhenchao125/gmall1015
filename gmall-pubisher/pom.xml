@@ -53,6 +53,7 @@
             <groupId>org.apache.phoenix</groupId>
             <artifactId>phoenix-core</artifactId>
             <version>4.14.2-HBase-1.3</version>
+
         </dependency>
         <!--phoenix 用到的工具包-->
         <dependency>
