@@ -78,9 +78,8 @@ object CanalClient {
                 }
                 // 3. 把数据写到kafka
                 MyKafkaUtil.send(Constant.TOPIC_ORDER_INFO, result.toJSONString)
+                
             }
         }
     }
-    
-    
 }
