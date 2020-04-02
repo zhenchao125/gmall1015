@@ -75,10 +75,19 @@ object AlertApp {
                 //(Boolean, 预警信息)
                 //(是否需要预警, 预警信息)
                 (uidSet.size() >= 3 && !isClickItem, AlertInfo(mid, uidSet, itemSet, eventList, System.currentTimeMillis()))
-            
         }
         
-        alertInfoStream.print(1000)
+        // 4. 把预警信息写入到es
+        alertInfoStream
+            .filter(_._1) // 先把需要写入到es的预警信息过滤出来
+            .map(_._2) // 只保留预警信息
+            .foreachRDD(rdd => {
+                rdd.foreachPartition(alterInfos => {
+                    // 连接到es
+                    // 写数据
+                    // 关闭到es的连接
+                })
+            })
         
         
         ssc.start()
