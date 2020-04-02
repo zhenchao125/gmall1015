@@ -37,7 +37,7 @@ object JsonMock {
     // 用户行为的分布(事件分布)
     val eventOpts = RandomOptions(
         ("addFavor", 10), ("addComment", 30),
-        ("addCart", 20), ("clickItem", 40))
+        ("addCart", 20), ("clickItem", 40), ("coupon", 120))
     
     // app 分发渠道分布
     val channelOpts = RandomOptions(
