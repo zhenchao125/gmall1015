@@ -18,14 +18,17 @@ import scala.util.control.Breaks._
  */
 object AlertApp {
     def main(args: Array[String]): Unit = {
-        val conf: SparkConf = new SparkConf().setMaster("local[*]").setAppName("AlertApp")
-        val ssc = new StreamingContext(conf, Seconds(3))
+        val conf: SparkConf = new SparkConf()
+            .setMaster("local[*]")
+            .setAppName("AlertApp")
+        val ssc: StreamingContext = new StreamingContext(conf, Seconds(3))
         // 1. 先从kafka消费数据
-        val sourceStream = MykafkaUtil
+        val sourceStream: DStream[String] = MykafkaUtil
             .getKafkaStream(ssc, Constant.TOPIC_EVENT)
             .window(Minutes(5), Seconds(6)) // 添加窗口
         // 2. 数据封装
-        val eventLogStream = sourceStream.map(s => JSON.parseObject(s, classOf[EventLog]))
+        val eventLogStream: DStream[EventLog] = sourceStream
+            .map(s => JSON.parseObject(s, classOf[EventLog]))
         
         // 3. 实现需求
         // 3.1 按照设备id进行分组
