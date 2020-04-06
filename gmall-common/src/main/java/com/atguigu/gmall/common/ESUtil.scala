@@ -53,7 +53,7 @@ object ESUtil {
         val client: JestClient = factory.getObject
     
         val bulk = new Bulk.Builder()
-            .defaultIndex("user")  // 多个doc应该进入同一个index中
+            .defaultIndex(index)  // 多个doc应该进入同一个index中
             .defaultType("_doc")
         
         sources.foreach(source => {
