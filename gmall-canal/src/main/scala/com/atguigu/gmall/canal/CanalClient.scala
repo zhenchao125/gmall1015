@@ -11,6 +11,7 @@ import com.atguigu.gmall.common.Constant
 import com.google.protobuf.ByteString
 
 import scala.collection.JavaConversions._
+import scala.util.Random
 
 /**
  * Author atguigu
@@ -90,8 +91,15 @@ object CanalClient {
                 result.put(key, value)
             }
             // 3. 把数据写到kafka
-            MyKafkaUtil.send(topic, result.toJSONString)
-//            println(result.toJSONString)
+            //MyKafkaUtil.send(topic, result.toJSONString)
+            //            println(result.toJSONString)
+            // 模拟延迟情况
+            new Thread() {
+                override def run(): Unit = {
+                    Thread.sleep(new Random().nextInt(20*1000))
+                    MyKafkaUtil.send(topic, result.toJSONString)
+                }
+            }.start()
         }
     }
 }
