@@ -66,20 +66,32 @@ object CanalClient {
                    rowDatas: util.List[CanalEntry.RowData],
                    eventType: CanalEntry.EventType) = {
         if ("order_info" == tableName && eventType == EventType.INSERT && rowDatas != null && rowDatas.nonEmpty) {
-            for (rowData <- rowDatas) {
-                val result = new JSONObject()
-                // 1. 一行所有的变化后的列.
-                val columnList: util.List[CanalEntry.Column] = rowData.getAfterColumnsList
-                // 2. 一行数据将来在kafka中, 应该放一样. 多列中封装到一个json字符串中
-                for (column <- columnList) {
-                    val key: String = column.getName // 列名
-                    val value: String = column.getValue // 列的值
-                    result.put(key, value)
-                }
-                // 3. 把数据写到kafka
-                MyKafkaUtil.send(Constant.TOPIC_ORDER_INFO, result.toJSONString)
-                
+            sendToKafka(Constant.TOPIC_ORDER_INFO, rowDatas)
+        } else if ("order_detail" == tableName && eventType == EventType.INSERT && rowDatas != null && rowDatas.nonEmpty) {
+            sendToKafka(Constant.TOPIC_ORDER_DETAIL, rowDatas)
+        }
+    }
+    
+    /**
+     * 把数据发送到Kafka
+     * alt+ctrl+m 抽取方法
+     *
+     * @param rowDatas
+     */
+    private def sendToKafka(topic: String, rowDatas: util.List[CanalEntry.RowData]): Unit = {
+        for (rowData <- rowDatas) {
+            val result = new JSONObject()
+            // 1. 一行所有的变化后的列.
+            val columnList: util.List[CanalEntry.Column] = rowData.getAfterColumnsList
+            // 2. 一行数据将来在kafka中, 应该放一样. 多列中封装到一个json字符串中
+            for (column <- columnList) {
+                val key: String = column.getName // 列名
+                val value: String = column.getValue // 列的值
+                result.put(key, value)
             }
+            // 3. 把数据写到kafka
+            MyKafkaUtil.send(topic, result.toJSONString)
+//            println(result.toJSONString)
         }
     }
 }
