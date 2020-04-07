@@ -93,6 +93,7 @@ object SaleDetailApp {
                     // 2. 根据orderId去缓存中读取对应的 多个OrderDetail的信息(集合)
                     // Set(order_detail:1:1, ....)
                     val keys: List[String] = client.keys(s"order_detail:${orderId}:*").toList
+                    
                     // 3. 集合中会有多个OrderDetail
                     keys.map(key => {
                         val orderDetailString: String = client.get(key)
@@ -102,10 +103,10 @@ object SaleDetailApp {
                 
                 // b: oderInfo没有对应的数据, orderDetail存在
                 case (orderId, (None, Some(orderDetail))) =>
-                    println("None", "some")
                     // 1. 根据orderDetail中的orderId去缓存读取对应的orderInfo信息
                     val orderInfoString: String = client.get("order_info:" + orderId)
-                    // 2. 读取之后, 有可能读到对应的OrderInfo信息, 也有可能没有读到. 分表处理
+                    println("None", "some")
+                    // 2. 读取之后, 有可能读到对应的OssrderInfo信息, 也有可能没有读到. 分表处理
                     // 2.1 读到, 把数据封装SaleDetail中去
                     if (orderInfoString != null && orderInfoString.nonEmpty) {
                         val orderInfo: OrderInfo = JSON.parseObject(orderInfoString, classOf[OrderInfo])
