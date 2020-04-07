@@ -32,8 +32,8 @@ object SaleDetailApp {
             })
         orderInfoStream.print(1000)
         orderDetailStream.print(1000)
-        
         // 3. 双流join
+        
         
         
         // 4. 根据用户的id反查mysql中的user_info表, 得到用户的生日和性别
