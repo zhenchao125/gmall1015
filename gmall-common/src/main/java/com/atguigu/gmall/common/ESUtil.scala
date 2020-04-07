@@ -46,6 +46,10 @@ object ESUtil {
     
     /**
      * 向es中插入批次数据
+     *
+     * 迭代器中的Any的类型:
+     *  1. 样例类(json字符串).  表示将来这个doc的id自动生成
+     *  2. (id, data)       元组, 第一个是id, 第二个是数据
      * @param index
      * @param sources
      */
@@ -55,11 +59,15 @@ object ESUtil {
         val bulk = new Bulk.Builder()
             .defaultIndex(index)  // 多个doc应该进入同一个index中
             .defaultType("_doc")
+        sources.foreach{
+            case (id: String, data) =>
+                val action = new Index.Builder(data).id(id).build()
+                bulk.addAction(action)
+            case data =>
+                val action = new Index.Builder(data).build()
+                bulk.addAction(action)
+        }
         
-        sources.foreach(source => {
-            val action = new Index.Builder(source).build()
-            bulk.addAction(action)
-        })
         client.execute(bulk.build())
         client.shutdownClient();
     }
@@ -85,8 +93,12 @@ object ESUtil {
     }
     */
     def main(args: Array[String]): Unit = {
-        val list = User(1, "a")::User(2, "b")::User(3, "c")::Nil
-        insertBulk("user", list.toIterator)
+        /*val list = User(1, "aa")::User(2, "bb")::User(3, "cc")::Nil
+        insertBulk("user", list.toIterator)*/
+        
+        val list2 =
+            ("100",User(1, "a"))::("200",User(2, "b"))::("300",User(3, "c"))::Nil
+        insertBulk("user", list2.toIterator)
         
         
         
