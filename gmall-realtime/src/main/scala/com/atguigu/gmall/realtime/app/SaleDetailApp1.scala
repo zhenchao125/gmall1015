@@ -3,7 +3,7 @@ package com.atguigu.gmall.realtime.app
 import java.util.Properties
 
 import com.alibaba.fastjson.JSON
-import com.atguigu.gmall.common.Constant
+import com.atguigu.gmall.common.{Constant, ESUtil}
 import com.atguigu.gmall.realtime.bean.{OrderDetail, OrderInfo, SaleDetail, UserInfo}
 import com.atguigu.gmall.realtime.util.{MykafkaUtil, RedisUtil}
 import org.apache.spark.SparkConf
@@ -183,9 +183,15 @@ object SaleDetailApp1 {
         
         // 4. 根据用户的id反查mysql中的user_info表, 得到用户的生日和性别
         saleDetailStream = joinUser(saleDetailStream, ssc)
-        saleDetailStream.print(1000)
         // 5. 把详情写到es中
-        
+        saleDetailStream.foreachRDD(rdd => {
+            // 方法1: 可以把rdd的所有数据拉倒驱动端, 一次性写入
+            ESUtil.insertBulk("sale_detail_1015", rdd.collect().toIterator)
+            // 方法2: 每个分区分分别去写
+            /*rdd.foreachPartition((it: Iterator[SaleDetail]) => {
+                ESUtil.insertBulk("sale_detail_1015", it)
+            })*/
+        })
         
         ssc.start()
         ssc.awaitTermination()
