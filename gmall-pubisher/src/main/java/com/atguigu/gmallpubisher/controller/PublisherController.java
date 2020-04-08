@@ -1,7 +1,9 @@
 package com.atguigu.gmallpubisher.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.atguigu.gmallpubisher.bean.Option;
 import com.atguigu.gmallpubisher.bean.SaleInfo;
+import com.atguigu.gmallpubisher.bean.Stat;
 import com.atguigu.gmallpubisher.service.PublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -119,11 +121,46 @@ public class PublisherController {
         // 0. 最终的结果
         SaleInfo saleInfo = new SaleInfo();
         // 1. 封装总数(聚合结果中, 任何一个都可以)
-        saleInfo.setTotal((Integer)resultAge.get("total"));
+        saleInfo.setTotal((Integer) resultAge.get("total"));
         // 2. 封装明细
         List<Map<String, Object>> detail = (List<Map<String, Object>>) resultAge.get("detail");
         saleInfo.setDetail(detail);
         // 3. 封装饼图(Stat)
+        // 3.1 性别的饼图
+
+        Stat genderStat = new Stat();
+        genderStat.setTitle("用户性别占比");
+        Map<String, Long> genderAgg = (Map<String, Long>) resultGender.get("agg");
+        for (String key : genderAgg.keySet()) {
+            Option opt = new Option();
+            opt.setName(key.replace("F", "女").replace("M", "男"));  // 饼图的性别
+            opt.setValue(genderAgg.get(key)); // 性别对应的个数
+            genderStat.addOption(opt); // 添加到性别的饼图中
+        }
+        saleInfo.addStat(genderStat);
+
+        // 3.2 年龄的饼图
+        Stat ageStat = new Stat();
+        ageStat.addOption(new Option("20岁以下", 0L));
+        ageStat.addOption(new Option("20岁到20岁", 0L));
+        ageStat.addOption(new Option("30岁及以上", 0L));
+        ageStat.setTitle("用户年龄占比");
+        Map<String, Long> ageAgg = (Map<String, Long>) resultAge.get("agg");
+        for (String key : ageAgg.keySet()) {
+            int age = Integer.parseInt(key);
+            Long value = ageAgg.get(key);
+            if(age < 20){
+                Option opt = ageStat.getOptions().get(0);
+                opt.setValue(opt.getValue() + value);
+            }else if(age < 30){
+                Option opt = ageStat.getOptions().get(1);
+                opt.setValue(opt.getValue() + value);
+            }else{
+                Option opt = ageStat.getOptions().get(2);
+                opt.setValue(opt.getValue() + value);
+            }
+        }
+        saleInfo.addStat(ageStat);
 
         return JSON.toJSONString(saleInfo);
     }
@@ -142,5 +179,39 @@ public class PublisherController {
 [{"id":"dau","name":"新增日活","value":1200},
 {"id":"new_mid","name":"新增设备","value":233 },
 {"id":"order_amount","name":"新增交易额","value":1000.2 }]
+----
+
+[
+    {
+        "options": [
+            {
+                "name": "20岁以下",
+                "value": 0.0
+            },
+            {
+                "name": "20岁到30岁",
+                "value": 25.8
+            },
+            {
+                "name": "30岁及30岁以上",
+                "value": 74.2
+            }
+        ],
+        "title": "用户年龄占比"
+    },
+    {
+        "options": [
+            {
+                "name": "男",
+                "value": 38.7
+            },
+            {
+                "name": "女",
+                "value": 61.3
+            }
+        ],
+        "title": "用户性别占比"
+    }
+]
 
  */
