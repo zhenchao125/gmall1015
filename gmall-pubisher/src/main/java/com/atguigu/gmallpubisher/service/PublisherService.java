@@ -26,7 +26,6 @@ public interface PublisherService {
     Map<String, Double> getHourOrderAmount(String date);
 
 
-
     // 销售明细的读取
     /*
     总数, 明细, 聚合的结果
@@ -35,9 +34,9 @@ public interface PublisherService {
     "agg" -> Map[M->10, F->20]
      */
     Map<String, Object> getSaleDetailAndAggGroupByField(String date,
-                                         String keyWord,
-                                         int startPage,
-                                         int sizePerPage,
-                                         int aggField,
-                                         int aggCount);
+                                                        String keyWord,
+                                                        int startPage,
+                                                        int sizePerPage,
+                                                        int aggField,
+                                                        int aggCount);
 }
