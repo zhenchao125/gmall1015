@@ -175,8 +175,8 @@ object SaleDetailApp1 {
         val orderDetailStream: DStream[(String, OrderDetail)] = MykafkaUtil
             .getKafkaStream(ssc, Constant.TOPIC_ORDER_DETAIL)
             .map(s => {
-                val orderInfo = JSON.parseObject(s, classOf[OrderDetail])
-                (orderInfo.order_id, orderInfo) // order_id就是和order_info表进行管理的条件
+                val orderDetail = JSON.parseObject(s, classOf[OrderDetail])
+                (orderDetail.order_id, orderDetail) // order_id就是和order_info表进行join的条件
             })
         // 3. 双流join
         var saleDetailStream: DStream[SaleDetail] = fullJoin(orderInfoStream, orderDetailStream)

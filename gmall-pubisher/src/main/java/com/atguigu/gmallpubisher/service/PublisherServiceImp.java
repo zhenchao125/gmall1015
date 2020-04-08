@@ -63,5 +63,20 @@ public class PublisherServiceImp implements PublisherService {
         }
         return result;
     }
+
+    /**
+     * 根据参数从es获取数据
+     * @param date
+     * @param keyWord
+     * @param startPage
+     * @param sizePerPage
+     * @param aggField
+     * @param aggCount
+     * @return
+     */
+    @Override
+    public Map<String, Object> getSaleDetailAndAggGroupByField(String date, String keyWord, int startPage, int sizePerPage, int aggField, int aggCount) {
+        return null;
+    }
 }
 

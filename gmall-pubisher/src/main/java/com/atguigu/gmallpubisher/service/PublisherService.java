@@ -24,4 +24,20 @@ public interface PublisherService {
 
     //Map("10"->11.11, "11"->20.33, "12"->30.55)
     Map<String, Double> getHourOrderAmount(String date);
+
+
+
+    // 销售明细的读取
+    /*
+    总数, 明细, 聚合的结果
+    "total"->100
+    "detail" -> Map[f->v, f->v]
+    "agg" -> Map[M->10, F->20]
+     */
+    Map<String, Object> getSaleDetailAndAggGroupByField(String date,
+                                         String keyWord,
+                                         int startPage,
+                                         int sizePerPage,
+                                         int aggField,
+                                         int aggCount);
 }
