@@ -24,6 +24,8 @@ object ESUtil {
         .build()
     factory.setHttpClientConfig(conf)
     
+    def getClient: JestClient = factory.getObject
+    
     
     /**
      * 向es中插入单条数据

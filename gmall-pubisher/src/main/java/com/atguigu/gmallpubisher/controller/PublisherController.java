@@ -1,15 +1,18 @@
 package com.atguigu.gmallpubisher.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.atguigu.gmallpubisher.bean.SaleInfo;
 import com.atguigu.gmallpubisher.service.PublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -62,7 +65,7 @@ public class PublisherController {
             result.put("yesterday", yesterday);
 
             return JSON.toJSONString(result);
-        }else if("order_amount".equals(id)){
+        } else if ("order_amount".equals(id)) {
             Map<String, Double> today = service.getHourOrderAmount(date);
             Map<String, Double> yesterday = service.getHourOrderAmount(getYesterday(date));
 
@@ -86,6 +89,45 @@ public class PublisherController {
 //        return LocalDate.parse(today).plusDays(-1).toString();
         return LocalDate.parse(today).minusDays(1).toString();
     }
+
+
+    /**
+     * saleDetail的接口
+     * http://localhost:8070/sale_detail?date=2019-05-20&&startpage=1&&size=5&&keyword=手机小米
+     */
+    @GetMapping("/sale_detail")
+    public String SaleDetail(@RequestParam("date") String date,
+                             @RequestParam("startpage") int startpage,
+                             @RequestParam("size") int size,
+                             @RequestParam("keyword") String keyword) throws IOException {
+
+        Map<String, Object> resultGender = service.getSaleDetailAndAggGroupByField(
+                date,
+                keyword,
+                startpage,
+                size,
+                "user_gender",
+                2);
+        Map<String, Object> resultAge = service.getSaleDetailAndAggGroupByField(
+                date,
+                keyword,
+                startpage,
+                size,
+                "user_age",
+                100);
+
+        // 0. 最终的结果
+        SaleInfo saleInfo = new SaleInfo();
+        // 1. 封装总数(聚合结果中, 任何一个都可以)
+        saleInfo.setTotal((Integer)resultAge.get("total"));
+        // 2. 封装明细
+        List<Map<String, Object>> detail = (List<Map<String, Object>>) resultAge.get("detail");
+        saleInfo.setDetail(detail);
+        // 3. 封装饼图(Stat)
+
+        return JSON.toJSONString(saleInfo);
+    }
+
 }
 /*
 [{"id":"dau","name":"新增日活","value":1200},

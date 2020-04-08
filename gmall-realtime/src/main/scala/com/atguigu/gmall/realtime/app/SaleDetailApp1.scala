@@ -75,7 +75,7 @@ object SaleDetailApp1 {
             val client: Jedis = RedisUtil.getClient
             
             // 2. 对各种延迟做处理  (如果返回一个就把一个放在集合中, 如果返回的是空, 就返回一个空集合 ...)
-            val result = it.flatMap {
+            val result: Iterator[SaleDetail] = it.flatMap {
                 case (orderId, (Some(orderInfo), opt)) =>
                     // 写缓冲
                     cacheOrderInfo(client, orderInfo)
@@ -186,7 +186,7 @@ object SaleDetailApp1 {
         // 5. 把详情写到es中
         saleDetailStream.foreachRDD(rdd => {
             // 方法1: 可以把rdd的所有数据拉倒驱动端, 一次性写入
-            ESUtil.insertBulk("sale_detail_1015", rdd.collect().toIterator)
+            ESUtil.insertBulk(Constant.INDEX_SALE_DETAIL, rdd.collect().toIterator)
             // 方法2: 每个分区分分别去写
             /*rdd.foreachPartition((it: Iterator[SaleDetail]) => {
                 ESUtil.insertBulk("sale_detail_1015", it)

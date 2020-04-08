@@ -1,5 +1,6 @@
 package com.atguigu.gmallpubisher.service;
 
+import java.io.IOException;
 import java.util.Map;
 
 public interface PublisherService {
@@ -37,6 +38,6 @@ public interface PublisherService {
                                                         String keyWord,
                                                         int startPage,
                                                         int sizePerPage,
-                                                        int aggField,
-                                                        int aggCount);
+                                                        String aggField,
+                                                        int aggCount) throws IOException;
 }
