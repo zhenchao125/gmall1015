@@ -14,7 +14,7 @@ import redis.clients.jedis.Jedis
  * Author atguigu
  * Date 2020/4/7 14:33
  */
-object SaleDetailApp {
+object SaleDetailApp1 {
     /**
      * 写数据到redis
      *
@@ -26,9 +26,9 @@ object SaleDetailApp {
         import org.json4s.DefaultFormats
         val json = Serialization.write(value)(DefaultFormats)
         // 把数据存入到redis
-//        client.set(key, json)
+        //        client.set(key, json)
         // 添加了过期时间  超过60*30秒之后这个key会自动删除
-        client.setex(key, 60 * 30 , json)
+        client.setex(key, 60 * 30, json)
     }
     
     /**
@@ -72,42 +72,24 @@ object SaleDetailApp {
             
             // 2. 对各种延迟做处理  (如果返回一个就把一个放在集合中, 如果返回的是空, 就返回一个空集合 ...)
             val result = it.flatMap {
-                // a: orderInfo和orderDetail都存在
-                case (orderId, (Some(orderInfo), Some(orderDetail))) =>
-                    println("some", "some")
-                    // 1. 写到缓冲区(向redis写数据)
+                case (orderId, (Some(orderInfo), opt)) =>
+                    // 写缓冲
                     cacheOrderInfo(client, orderInfo)
-                    // 2. 把orderInfo和oderDetail的数据封装到一起, 封装到样例类中
-                    val first = SaleDetail().mergeOrderInfo(orderInfo).mergeOrderDetail(orderDetail)
-                    // 3. 去缓冲区找已经进入缓冲区的OrderDetail
+                    // 不管opt是some还是none, 总是要去读OrderDetail的缓冲区
                     val keys: List[String] = client.keys(s"order_detail:${orderId}:*").toList
                     // 3.1 集合中会有多个OrderDetail
-                    first :: keys.map(key => {
-                        val orderDetailString: String = client.get(key)
-                        client.del(key)  // 防止这个orderDetail被重复join
-                        val orderDetail = JSON.parseObject(orderDetailString, classOf[OrderDetail])
-                        
-                        SaleDetail().mergeOrderInfo(orderInfo).mergeOrderDetail(orderDetail)
-                        
-                    })
-                
-                // c: OrderInfo存在, OrderDetail没有对应的的数据
-                case (orderId, (Some(orderInfo), None)) =>
-                    println("some", "None")
-                    // 1. orderInfo要写入缓存 (考虑对应的OrderDetail有多个, 可能还在延迟中)
-                    cacheOrderInfo(client, orderInfo)
-                    // 2. 根据orderId去缓存中读取对应的 多个OrderDetail的信息(集合)
-                    // Set(order_detail:1:1, ....)
-                    val keys: List[String] = client.keys(s"order_detail:${orderId}:*").toList
-                    
-                    // 3. 集合中会有多个OrderDetail
                     keys.map(key => {
                         val orderDetailString: String = client.get(key)
-                        client.del(key)  // 防止这个orderDetail被重复join
+                        client.del(key) // 防止这个orderDetail被重复join
                         val orderDetail = JSON.parseObject(orderDetailString, classOf[OrderDetail])
+                        
                         SaleDetail().mergeOrderInfo(orderInfo).mergeOrderDetail(orderDetail)
+                    }) ::: (opt match {
+                        case Some(orderDetail) =>
+                            SaleDetail().mergeOrderInfo(orderInfo).mergeOrderDetail(orderDetail) :: Nil
+                        case None =>
+                            Nil
                     })
-                
                 // b: oderInfo没有对应的数据, orderDetail存在
                 case (orderId, (None, Some(orderDetail))) =>
                     // 1. 根据orderDetail中的orderId去缓存读取对应的orderInfo信息
