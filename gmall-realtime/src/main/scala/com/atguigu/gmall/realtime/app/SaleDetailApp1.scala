@@ -1,10 +1,14 @@
 package com.atguigu.gmall.realtime.app
 
+import java.util.Properties
+
 import com.alibaba.fastjson.JSON
 import com.atguigu.gmall.common.Constant
-import com.atguigu.gmall.realtime.bean.{OrderDetail, OrderInfo, SaleDetail}
+import com.atguigu.gmall.realtime.bean.{OrderDetail, OrderInfo, SaleDetail, UserInfo}
 import com.atguigu.gmall.realtime.util.{MykafkaUtil, RedisUtil}
 import org.apache.spark.SparkConf
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.json4s.jackson.Serialization
@@ -114,6 +118,49 @@ object SaleDetailApp1 {
         })
     }
     
+    /**
+     * 使用spark-sql去读mysql中的数据, 然后把需要的字段添加到 SaleDetail
+     *
+     * @param saleDetailStream
+     * @param ssc
+     */
+    def joinUser(saleDetailStream: DStream[SaleDetail], ssc: StreamingContext) = {
+        val url = "jdbc:mysql://hadoop102:3306/gmall1015"
+        val props = new Properties()
+        props.setProperty("user", "root")
+        props.setProperty("password", "aaaaaa")
+        val spark = SparkSession.builder()
+            .config(ssc.sparkContext.getConf) // 给sparkSession进行配置的时候, 使用ssc.sparkContext的配置
+            .getOrCreate()
+        import spark.implicits._
+        // 1. 先把mysql数据读进来 每隔3s读一次
+        saleDetailStream.transform((SaleDetailRDD: RDD[SaleDetail]) => {
+            /*
+                2. 读mysql数据的时候, 有两种读法:
+                  2.1 直接在driver中去把数据读过来
+                  2.2 每个分区读一次
+             */
+            // 2.1 直接在driver中去把数据读过来
+            val userInfoRDD: RDD[(String, UserInfo)] = spark
+                .read
+                .jdbc(url, "user_info", props)
+                .as[UserInfo]
+                .rdd
+                .map(user => (user.id, user))
+            
+            // 2.2 两个RDD做join
+            SaleDetailRDD
+                .map(saleDetail => (saleDetail.user_id, saleDetail))
+                .join(userInfoRDD)
+                .map {
+                    case (_, (saleDetail, userInfo)) =>
+                        saleDetail.mergeUserInfo(userInfo)
+                    
+                }
+        })
+        
+    }
+    
     def main(args: Array[String]): Unit = {
         val conf: SparkConf = new SparkConf().setMaster("local[*]").setAppName("SaleDetailApp")
         val ssc = new StreamingContext(conf, Seconds(3))
@@ -132,11 +179,11 @@ object SaleDetailApp1 {
                 (orderInfo.order_id, orderInfo) // order_id就是和order_info表进行管理的条件
             })
         // 3. 双流join
-        val saleDetailStream = fullJoin(orderInfoStream, orderDetailStream)
-        saleDetailStream.print(1000)
+        var saleDetailStream: DStream[SaleDetail] = fullJoin(orderInfoStream, orderDetailStream)
+        
         // 4. 根据用户的id反查mysql中的user_info表, 得到用户的生日和性别
-        
-        
+        saleDetailStream = joinUser(saleDetailStream, ssc)
+        saleDetailStream.print(1000)
         // 5. 把详情写到es中
         
         

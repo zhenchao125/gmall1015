@@ -25,7 +25,7 @@ case class SaleDetail(var order_detail_id: String = null,
             this.order_status = orderInfo.order_status
             this.create_time = orderInfo.create_time
             this.dt = orderInfo.create_time.substring(0, 10)
-            this.user_id = orderInfo.user_id
+            this.user_id = orderInfo.user_id  // 将来和user_info进行join的时候要用
         }
         this
     }
