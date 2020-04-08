@@ -83,6 +83,7 @@ object SaleDetailApp {
                         val orderDetailString: String = client.get(key)
                         val orderDetail = JSON.parseObject(orderDetailString, classOf[OrderDetail])
                         SaleDetail().mergeOrderInfo(orderInfo).mergeOrderDetail(orderDetail)
+                        
                     })
                 
                 // c: OrderInfo存在, OrderDetail没有对应的的数据
@@ -106,7 +107,7 @@ object SaleDetailApp {
                     // 1. 根据orderDetail中的orderId去缓存读取对应的orderInfo信息
                     val orderInfoString: String = client.get("order_info:" + orderId)
                     println("None", "some")
-                    // 2. 读取之后, 有可能读到对应的OssrderInfo信息, 也有可能没有读到. 分表处理
+                    // 2. 读取之后, 有可能读到对应的OderInfo信息, 也有可能没有读到. 分别处理
                     // 2.1 读到, 把数据封装SaleDetail中去
                     if (orderInfoString != null && orderInfoString.nonEmpty) {
                         val orderInfo: OrderInfo = JSON.parseObject(orderInfoString, classOf[OrderInfo])
@@ -162,10 +163,10 @@ redis写到什么样的数据类型
 
 hash?
     key                              value(hash)
-    "order_info"                     field              value
-                                     order_id           整个order_info的所有数据(json字符串)
+    "order_info"                     field                              value
+                                     order_id                           整个order_info的所有数据(json字符串)
     
-    "order_detail"                   order_id           整个order_detail的所有数据(json字符串)
+    "order_detail"                   order_id:order_detail_id           整个order_detail的所有数据(json字符串)
     
 -----
 
