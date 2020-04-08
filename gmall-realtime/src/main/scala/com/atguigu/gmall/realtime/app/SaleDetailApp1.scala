@@ -137,17 +137,17 @@ object SaleDetailApp1 {
         saleDetailStream.transform((SaleDetailRDD: RDD[SaleDetail]) => {
             /*
                 2. 读mysql数据的时候, 有两种读法:
-                  2.1 直接在driver中去把数据读过来
-                  2.2 每个分区读一次
+                  2.1 直接会用rdd的join完成
+                  2.2 每个分区自己负责join(map端join)  参考map端的join代码
              */
-            // 2.1 直接在driver中去把数据读过来
+            // 2.1 直接会用rdd的join完成
             val userInfoRDD: RDD[(String, UserInfo)] = spark
                 .read
                 .jdbc(url, "user_info", props)
                 .as[UserInfo]
                 .rdd
                 .map(user => (user.id, user))
-            
+    
             // 2.2 两个RDD做join
             SaleDetailRDD
                 .map(saleDetail => (saleDetail.user_id, saleDetail))
@@ -155,7 +155,7 @@ object SaleDetailApp1 {
                 .map {
                     case (_, (saleDetail, userInfo)) =>
                         saleDetail.mergeUserInfo(userInfo)
-                    
+            
                 }
         })
         
